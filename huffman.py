@@ -81,20 +81,73 @@ def encode(string, table):
   return result
 
 
-def show_how_it_works(string):
+def open_txt_file(file_name):
+  data = ""
+  with open(file_name, "r") as file:
+    data = file.read()
+  return data
+
+def open_huf_file(file_name):
+  data = None
+  with open(file_name, "r") as file:
+    data = file.read()
+  keys_len = ord(data[0])
+  data = data[1:]
+  table = {}
+  for i in range(keys_len):
+    key = data[0]; data = data[1:]
+    char_len = ord(data[0]); data = data[1:]
+    chars = data[:char_len-1]; data = data[char_len-1:]
+    lb = ord(data[0]); data = data[1:]
+    table[key] = [char for char in create_binary_string_from_chars(chars, lb)]
+  raw_string = data[:-1]
+  last_byte_len = ord(data[-1])
+  return table, create_binary_string_from_chars(raw_string, last_byte_len)
+
+def create_char_string_from_binary(binary_string):
+  bin_array = []
+  while len(binary_string) > 8:
+    bin_array.append(binary_string[:8])
+    binary_string = binary_string[8:]
+  last_bit = 0
+  if binary_string:
+    last_bit = 8-len(binary_string)
+    binary_string += "0"*last_bit
+    bin_array.append(binary_string)
+  binary_string = "".join([chr(int(char, 2)) for char in bin_array])
+  return binary_string, chr(last_bit)
+
+def create_binary_string_from_chars(raw_string, last_byte_len):
+  string_array = ["0"*(8-len(bin(ord(char))[2:]))+bin(ord(char))[2:] for char in raw_string]
+  string_array[-1] = string_array[-1][:(8-last_byte_len)]
+  string = "".join(string_array)
+  return string
+
+def save_huf_file(file_name, table, binary_string):
+  table_string = "%s"%chr(len(table))
+  for key, bit_list in table.items():
+    bs, lb = create_char_string_from_binary("".join(bit_list))
+    bit_len = len(bs) + 1
+    table_string += key + chr(bit_len) + bs + lb
+  binary_string, last_bit = create_char_string_from_binary(binary_string)
+  with open(file_name, "w") as file:
+    file.write(table_string)
+    file.write(binary_string)
+    file.write(last_bit)
+  return True
+
+def show_how_it_works(file_name):
+  string = open_txt_file(file_name)
   tree = generate_tree(string)
   table = code_hash(tree)
   print "Huffman algorithm"
   print " TABLE:"
   for word, way in sorted(table.items(), key = lambda data: len(data[1])):
     print "   - '%s': %s"%(word, "".join(way))
-  print " DECODE", decode(string, table)
-  print " ENCODE", encode(decode(string, table), table)
-  print "source length", len(string), "bytes"
-  print "decode length", len(decode(string, table))/8, "+", 2*len(table), "bytes"
-  
+  save_huf_file("%s_huf"%file_name, table, decode(string, table))
+  new_table, new_string = open_huf_file("%s_huf"%file_name)
+  print " ENCODE", encode(new_string, new_table)
 
-show_how_it_works("beep boop beer!")
-show_how_it_works("The accepted answer is correct, but there is a more clever/efficient way to do\
- this if you need to convert a whole \
- bunch of ASCII characters to their ASCII codes at once")
+show_how_it_works("tests/test1")
+show_how_it_works("tests/test2")
+show_how_it_works("tests/test3")
