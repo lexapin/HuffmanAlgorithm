@@ -29,7 +29,7 @@ def generate_tree(string):
     node = Node(left = left[0], right = right[0])
     word_hash[node] = left[1] + right[1]
     del word_hash[left[0]], word_hash[right[0]]
-  return word_hash.keys()[0]
+  return list(word_hash.keys())[0]
 
 
 def code_hash(node, direction = None):
@@ -140,13 +140,13 @@ def show_how_it_works(file_name):
   string = open_txt_file(file_name)
   tree = generate_tree(string)
   table = code_hash(tree)
-  print "Huffman algorithm"
-  print " TABLE:"
+  print ("Huffman algorithm")
+  print (" TABLE:")
   for word, way in sorted(table.items(), key = lambda data: len(data[1])):
-    print "   - '%s': %s"%(word, "".join(way))
+    print ("   - '%s': %s"%(word, "".join(way)))
   save_huf_file("%s_huf"%file_name, table, decode(string, table))
   new_table, new_string = open_huf_file("%s_huf"%file_name)
-  print " ENCODE", encode(new_string, new_table)
+  print (" ENCODE", encode(new_string, new_table))
 
 show_how_it_works("tests/test1")
 show_how_it_works("tests/test2")
