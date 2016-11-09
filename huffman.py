@@ -117,9 +117,9 @@ def create_char_string_from_binary(binary_string):
     last_bit = 8-len(binary_string)
     binary_string += "0"*last_bit
     bin_array.append(binary_string)
-  binary_string = "".join([chr(int(char, 2)) for char in bin_array])
-  return binary_string, chr(last_bit)
- 
+  binary_string = [int(char, 2) for char in bin_array]
+  return binary_string, last_bit
+
 def create_binary_string_from_chars(raw_string, last_byte_len):
   string_array = ["0"*(8-len(bin(to_int(char))[2:]))+bin(to_int(char))[2:] for char in raw_string]
   string_array[-1] = string_array[-1][:(8-last_byte_len)]
@@ -131,14 +131,14 @@ def save_huf_file(file_name, table, binary_string):
   for key, bit_list in table.items():
     bs, lb = create_char_string_from_binary("".join(bit_list))
     bit_len = len(bs) + 1
-    table_string += [ord(key), bit_len] + [ord(char) for char in bs] + [ord(lb)]
+    table_string += [ord(key), bit_len] + bs + [lb]
   binary_string, last_bit = create_char_string_from_binary(binary_string)
   with open(file_name, "wb") as file:
     file.write(bytearray(table_string))
-    file.write(bytearray([ord(char) for char in binary_string]))
-    file.write(bytearray([ord(char) for char in last_bit]))
+    file.write(bytearray(binary_string))
+    file.write(bytearray([last_bit,]))
   return True
- 
+
 def show_how_it_works(file_name):
   string = open_txt_file(file_name)
   tree = generate_tree(string)
