@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 from collections import defaultdict
-
+ 
 class Node(object):
   """docstring for Node"""
   def __init__(self, key = None, left = None, right = None):
@@ -7,19 +8,18 @@ class Node(object):
     self.key = key
     self.left = left
     self.right = right
-
+ 
   def __hash__(self):
     return id(self) if self.key is None else ord(self.key)
-
+ 
   def __eq__(self, obj):
     self_key = id(self) if self.key is None else ord(self.key)
     obj_key = id(obj) if obj.key is None else ord(obj.key)
     return self_key == obj_key
-
+ 
   def __repr__(self):
     return "<NODE: %s>"%self.key
-
-
+ 
 def generate_tree(string):
   word_hash = defaultdict(int)
   for word in string:
@@ -30,8 +30,7 @@ def generate_tree(string):
     word_hash[node] = left[1] + right[1]
     del word_hash[left[0]], word_hash[right[0]]
   return list(word_hash.keys())[0]
-
-
+ 
 def code_hash(node, direction = None):
   result = {}
   if node.key is None:
@@ -41,15 +40,13 @@ def code_hash(node, direction = None):
       for key in result: result[key].insert(0, direction)
   else: result[node.key] = [direction]
   return result
-
-
+ 
 def decode(string, table):
   result = ""
   for word in string:
     result += "".join(table[word])
   return result
-
-
+ 
 def restore_tree(table):
   node = Node()
   for word, way in table.items():
@@ -63,8 +60,7 @@ def restore_tree(table):
       current_node = getattr(current_node, attr)
     current_node.key = word
   return node
-
-
+ 
 def encode(string, table):
   root_node = restore_tree(table)
   result = ""
@@ -79,31 +75,38 @@ def encode(string, table):
       result += current_node.key
       current_node = root_node
   return result
-
-
+ 
 def open_txt_file(file_name):
   data = ""
   with open(file_name, "r") as file:
     data = file.read()
-  return data
+  line = ""
+  try:
+    return data.decode('utf-8').encode('utf-8')
+  except:
+    print("WARNING")
+    return str(data.encode('utf-8'))
 
+def to_int(char):
+  return char if isinstance(char, int) else ord(char)
+ 
 def open_huf_file(file_name):
   data = None
-  with open(file_name, "r") as file:
+  with open(file_name, "rb") as file:
     data = file.read()
-  keys_len = ord(data[0])
+  keys_len = to_int(data[0])
   data = data[1:]
   table = {}
   for i in range(keys_len):
-    key = data[0]; data = data[1:]
-    char_len = ord(data[0]); data = data[1:]
+    key = chr(to_int(data[0])); data = data[1:]
+    char_len = to_int(data[0]); data = data[1:]
     chars = data[:char_len-1]; data = data[char_len-1:]
-    lb = ord(data[0]); data = data[1:]
+    lb = to_int(data[0]); data = data[1:]
     table[key] = [char for char in create_binary_string_from_chars(chars, lb)]
   raw_string = data[:-1]
-  last_byte_len = ord(data[-1])
+  last_byte_len = to_int(data[-1])
   return table, create_binary_string_from_chars(raw_string, last_byte_len)
-
+ 
 def create_char_string_from_binary(binary_string):
   bin_array = []
   while len(binary_string) > 8:
@@ -116,26 +119,26 @@ def create_char_string_from_binary(binary_string):
     bin_array.append(binary_string)
   binary_string = "".join([chr(int(char, 2)) for char in bin_array])
   return binary_string, chr(last_bit)
-
+ 
 def create_binary_string_from_chars(raw_string, last_byte_len):
-  string_array = ["0"*(8-len(bin(ord(char))[2:]))+bin(ord(char))[2:] for char in raw_string]
+  string_array = ["0"*(8-len(bin(to_int(char))[2:]))+bin(to_int(char))[2:] for char in raw_string]
   string_array[-1] = string_array[-1][:(8-last_byte_len)]
   string = "".join(string_array)
   return string
-
+ 
 def save_huf_file(file_name, table, binary_string):
-  table_string = "%s"%chr(len(table))
+  table_string = [len(table)]
   for key, bit_list in table.items():
     bs, lb = create_char_string_from_binary("".join(bit_list))
     bit_len = len(bs) + 1
-    table_string += key + chr(bit_len) + bs + lb
+    table_string += [ord(key), bit_len] + [ord(char) for char in bs] + [ord(lb)]
   binary_string, last_bit = create_char_string_from_binary(binary_string)
-  with open(file_name, "w") as file:
-    file.write(table_string)
-    file.write(binary_string)
-    file.write(last_bit)
+  with open(file_name, "wb") as file:
+    file.write(bytearray(table_string))
+    file.write(bytearray([ord(char) for char in binary_string]))
+    file.write(bytearray([ord(char) for char in last_bit]))
   return True
-
+ 
 def show_how_it_works(file_name):
   string = open_txt_file(file_name)
   tree = generate_tree(string)
@@ -147,7 +150,7 @@ def show_how_it_works(file_name):
   save_huf_file("%s_huf"%file_name, table, decode(string, table))
   new_table, new_string = open_huf_file("%s_huf"%file_name)
   print (" ENCODE", encode(new_string, new_table))
-
+ 
 show_how_it_works("tests/test1")
 show_how_it_works("tests/test2")
 show_how_it_works("tests/test3")
