@@ -1,0 +1,1 @@
+The accepted answer is correct, but there is a more clever/efficient way to do this if you need to convert a whole bunch of ASCII characters to their ASCII codes at once.
